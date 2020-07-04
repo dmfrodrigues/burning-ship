@@ -1,4 +1,3 @@
-#include <wx/wx.h>
 #include "FractalFrame.h"
 #include "BurningShip.h"
 
@@ -15,7 +14,8 @@ public:
         return true;
     }
     int OnExit(){
-        if(f!=NULL) delete f;
+        delete f;
+        return wxApp::OnExit();
     }
 };
 

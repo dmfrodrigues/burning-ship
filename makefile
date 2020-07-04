@@ -1,27 +1,55 @@
+ifeq ($(OS),Windows_NT) 
+    detected_OS := Windows
+else
+    detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+endif
+
+ifeq ($(detected_OS),Windows)
+	MKDIR=mkdir -p --
+	RM   =rm -f
+	RMDIR=rm -rf
+endif
+ifeq ($(detected_OS),Linux)
+	MKDIR=mkdir -p
+	RM   =rm -f
+	RMDIR=rm -rf
+endif
+
+PROG=burningship
+
+IFLAGS =$(IDIR) #-I$(MCAP)
+LFLAGS =`wx-config --libs` -L"fractal-app/lib" -lfractalapp
+
 CC     =g++
 
 SDIR   =./src
-IDIR   =-I./include -I../fractal-app/include
+IDIR   =-I./include -I./fractal-app/include
 ODIR   =./obj
-BDIR   =./bin
 
-IFLAGS =$(IDIR) -I"D:\_ProgrammingLibraries\wxWidgets-3.0.4-new\include" -I"D:\_ProgrammingLibraries\wxWidgets-3.0.4-new" -I"D:\_ProgrammingLibraries\wxWidgets-3.0.4-new\lib\gcc_dll_UNICODE_MONOLITHIC_RELEASE\mswu" -I"D:\_ProgrammingLibraries\mcap"
-CFLAGS =-MMD -std=c++11 -ffast-math -O3 $(IFLAGS) -c
+CFLAGS_OPTIMIZE=-ffast-math -O3
+CFLAGS_PARANOID=-pthread -g -O -Wall -pedantic -Wunused-result -pedantic-errors -Wextra -Wcast-align -Wcast-qual -Wchar-subscripts -Wcomment -Wconversion -Wdisabled-optimization \
+    -Wfloat-equal  -Wformat  -Wformat=2 -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport -Winit-self -Winvalid-pch -Wmissing-braces \
+    -Wmissing-field-initializers -Wmissing-format-attribute -Wmissing-include-dirs -Wmissing-noreturn -Wpacked -Wparentheses  -Wpointer-arith -Wredundant-decls -Wreturn-type \
+    -Wsequence-point  -Wshadow -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch  -Wswitch-default -Wswitch-enum -Wtrigraphs  -Wuninitialized \
+    -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function  -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable  -Wvariadic-macros \
+    -Wvolatile-register-var  -Wwrite-strings# -Wunsafe-loop-optimizations -Winline -Weffc++ -Wpadded
+CFLAGS =$(IFLAGS) $(CFLAGS_PARANOID) $(CFLAGS_OPTIMIZE) `wx-config --cxxflags`
 
-#LFLAGS =-L"D:\_ProgrammingLibraries\wxWidgets-3.0.4\lib\gcc_dll_SHARED_RELEASE_MONOLITHIC_UNICODE"
-LFLAGS =-L"D:\_ProgrammingLibraries\wxWidgets-3.0.4-new\lib\gcc_dll_UNICODE_MONOLITHIC_RELEASE" -L"../fractal-app/lib" -lfractalapp
+all: $(PROG)
 
-all: makefolders $(BDIR)/main.exe
+$(PROG): $(ODIR)/BurningShip.o $(ODIR)/FractalApp.o
+	make -C fractal-app
+	$(CC) $(CFLAGS) -o $(PROG) $(ODIR)/BurningShip.o $(ODIR)/FractalApp.o $(LFLAGS)
 
-makefolders:
-	mkdir -p obj
-	mkdir -p bin
+$(ODIR)/%.o: $(SDIR)/%.cpp | $(ODIR)
+	$(CC) $(CFLAGS) -c $^ -o $@
 
-$(BDIR)/main.exe:              $(ODIR)/BurningShip.o $(ODIR)/FractalApp.o
-	$(CC) -o $(BDIR)/main.exe $(ODIR)/BurningShip.o $(ODIR)/FractalApp.o $(LFLAGS) -s -mthreads -lwxmsw30u -mwindows
-$(ODIR)/BurningShip.o:          $(SDIR)/BurningShip.cpp
-	$(CC) $(CFLAGS)            $(SDIR)/BurningShip.cpp          -o $(ODIR)/BurningShip.o
-$(ODIR)/FractalApp.o:          $(SDIR)/FractalApp.cpp
-	$(CC) $(CFLAGS)            $(SDIR)/FractalApp.cpp          -o $(ODIR)/FractalApp.o
+$(ODIR):
+	$(MKDIR) $@
 
--include $(ODIR)/*.d
+clean:
+	$(RMDIR) $(ODIR)
+	$(RM) $(PROG)
+
+cleanall: clean
+	make -C fractal-app clean

@@ -1,0 +1,3 @@
+[submodule "fractal-app"]
+	path = fractal-app
+	url = https://github.com/dmfrodrigues/fractal-app.git
