@@ -1,0 +1,72 @@
+name: win-mingw64-x86_64
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  wxwin: C:\wx\3.0.5
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install MinGW-W64 x86_64
+      shell: cmd
+      run: |
+        C:
+        cd C:\
+        mkdir mingw-w64
+        cd mingw-w64
+        curl -L --insecure https://www.dropbox.com/s/2vlr813fjmyhp1r/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z?dl=1 --output x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z
+        7z x x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z -y -ox86_64-8.1.0-release-posix-seh-rt_v6-rev0
+        echo "C:\mingw-w64\x86_64-8.1.0-release-posix-seh-rt_v6-rev0\mingw64\bin" >> $GITHUB_PATH
+
+    - name: Install wxWidgets3.0.5 MinGW-w64 8.1 64bit
+      shell: cmd
+      run: |
+        C:
+        cd C:\
+        mkdir wx\3.0.5
+        cd wx\3.0.5
+        curl -L --insecure https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.5/wxWidgets-3.0.5-headers.7z           --output wxWidgets-3.0.5-headers.7z
+        curl -L --insecure https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.5/wxMSW-3.0.5_gcc810_x64_Dev.7z        --output wxMSW-3.0.5_gcc810_x64_Dev.7z
+        curl -L --insecure https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.5/wxMSW-3.0.5_gcc810_x64_ReleaseDLL.7z --output wxMSW-3.0.5_gcc810_x64_ReleaseDLL.7z
+        7z x wxWidgets-3.0.5-headers.7z -y
+        7z x wxMSW-3.0.5_gcc810_x64_Dev.7z -y
+        7z x wxMSW-3.0.5_gcc810_x64_ReleaseDLL.7z -y
+
+    - name: Checkout submodules
+      shell: cmd
+      run: |
+        git submodule sync --recursive
+        git submodule update --init --force --recursive --depth=1
+    
+    - name: CMake
+      shell: cmd
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G "MinGW Makefiles" -DWX_ROOT_DIR:PATH=C:\wx\3.0.5 -DwxWidgets_LIB_DIR:PATH=C:\wx\3.0.5\lib\gcc810_x64_dll -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --verbose
+
+    - name: Copy DLLs to project
+      shell: cmd
+      run: |
+        copy C:\wx\3.0.5\lib\gcc810_x64_dll\wxbase30u_gcc810_x64.dll .
+        copy C:\wx\3.0.5\lib\gcc810_x64_dll\wxmsw30u_core_gcc810_x64.dll .
+
+    - name: Upload zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: burning-ship-win-64bit
+        path: |
+          LICENSE
+          README.md
+          burning-ship.exe
+          wxbase30u_gcc810_x64.dll
+          wxmsw30u_core_gcc810_x64.dll

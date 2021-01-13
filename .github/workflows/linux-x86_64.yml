@@ -1,4 +1,4 @@
-name: compile
+name: linux-x86_64
 
 on:
   push:
@@ -8,33 +8,34 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
 
     - name: Install wxWidgets
-      run: sudo apt install -y libwxgtk3.0-dev
+      run: |
+        sudo apt update
+        sudo apt install -y libwxgtk3.0-gtk3-dev
 
     - name: Checkout submodules
       shell: bash
       run: |
-        # If your submodules are configured to use SSH instead of HTTPS please uncomment the following line
-        # git config --global url."https://github.com/".insteadOf "git@github.com:"
         auth_header="$(git config --local --get http.https://github.com/.extraheader)"
         git submodule sync --recursive
         git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-
+    
     - name: cmake
       run: |
         mkdir build
         cd build
         cmake ..
-
-    - name: make
-      run: |
-        cd build
         make
 
-    - name: check make
-      run: |
-        [ -f burning-ship ] || exit 1
+    - name: Upload zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: burning-ship-linux-64bit
+        path: |
+          LICENSE
+          README.md
+          burning-ship

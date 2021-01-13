@@ -30,4 +30,16 @@ set(CPP_COMPILER_WARNINGS -Wall -Wunused-result -pedantic-errors -Wextra -Wcast-
 
 set(CPP_COMPILER_OPTIMIZE -ffast-math -O3)
 
-target_compile_options(burning-ship PRIVATE -g ${CPP_COMPILER_WARNINGS} ${CPP_COMPILER_OPTIMIZE})
+set(CPP_COMPILER_OPTIONS )
+set(CPP_LINKER_OPTIONS )
+if(WIN32)
+    message(STATUS "GCC under Microsoft Windows")
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+        message(STATUS "Release mode: no console")
+        set(CPP_COMPILER_OPTIONS ${CPP_COMPILER_OPTIONS} -mwindows)
+        set(CPP_LINKER_OPTIONS ${CPP_LINKER_OPTIONS} -mwindows)
+    endif()
+endif()
+
+target_compile_options(burning-ship PRIVATE -g ${CPP_COMPILER_WARNINGS} ${CPP_COMPILER_OPTIMIZE} ${CPP_COMPILER_OPTIONS})
+target_link_options(burning-ship PRIVATE ${CPP_LINKER_OPTIONS})
